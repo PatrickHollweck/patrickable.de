@@ -1,0 +1,10 @@
+# Secrets
+.env
+
+# Docker Volumes
+mysql
+minio
+netdata
+minecraft
+nextcloud
+web-server

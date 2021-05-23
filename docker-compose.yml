@@ -1,0 +1,247 @@
+version: "3"
+
+networks:
+  web-server:
+  mysql-database:
+
+volumes:
+  netdata_lib:
+  netdata_conf:
+  netdata_cache:
+
+services:
+  web-server:
+    image: nginxproxy/nginx-proxy:alpine
+    container_name: web-server
+    restart: unless-stopped
+    labels:
+      - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy"
+    networks:
+      - web-server
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      DEFAULT_HOST: ${DEFAULT_HOST}
+    volumes:
+      - ${WEB_SERVER_VOL_CONF}:/etc/nginx/conf.d
+      - ${WEB_SERVER_VOL_HTML}:/usr/share/nginx/html
+      - ${WEB_SERVER_VOL_VHOST}:/etc/nginx/vhost.d
+      - ${WEB_SERVER_VOL_CERTS}:/etc/nginx/certs:ro
+      - ${WEB_SERVER_VOL_DHPARAM}:/etc/nginx/dhparam
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  acme-companion:
+    image: nginxproxy/acme-companion
+    container_name: acme-companion
+    restart: unless-stopped
+    depends_on:
+      - web-server
+    networks:
+      - web-server
+    volumes:
+      # volumes_from: web-server
+      - ${WEB_SERVER_VOL_CONF}:/etc/nginx/conf.d
+      - ${WEB_SERVER_VOL_HTML}:/usr/share/nginx/html
+      - ${WEB_SERVER_VOL_VHOST}:/etc/nginx/vhost.d
+      - ${WEB_SERVER_VOL_DHPARAM}:/etc/nginx/dhparam
+      # Additional
+      - ${WEB_SERVER_VOL_ACME}:/etc/acme.sh
+      - ${WEB_SERVER_VOL_CERTS}:/etc/nginx/certs:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  mysql-database:
+    image: mariadb:latest
+    container_name: mysql-database
+    restart: unless-stopped
+    networks:
+      - mysql-database
+    volumes:
+      - ${MYSQL_VOL_DATA}:/var/lib/mysql
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    restart: unless-stopped
+    links:
+      - mysql-database
+    networks:
+      - web-server
+      - mysql-database
+    environment:
+      # Hosting
+      VIRTUAL_HOST: ${PHPMYADMIN_HOST}
+      LETSENCRYPT_HOST: ${PHPMYADMIN_HOST}
+      LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
+      # DB Connection
+      PMA_HOST: mysql-database
+      # PHP Options
+      MEMORY_LIMIT: 4G
+      UPLOAD_LIMIT: 4G
+      MAX_EXECUTION_TIME: 5000
+
+  website-root:
+    image: flashspys/nginx-static
+    container_name: website-root
+    restart: unless-stopped
+    networks:
+      - web-server
+    volumes:
+      - ${WEBSITE_ROOT_VOL_FILES}:/static
+    environment:
+      VIRTUAL_HOST: ${WEBSITE_ROOT_HOST}
+      LETSENCRYPT_HOST: ${WEBSITE_ROOT_HOST}
+      LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
+
+  website-thw:
+    image: flashspys/nginx-static
+    container_name: website-thw
+    restart: unless-stopped
+    networks:
+      - web-server
+    volumes:
+      - ${WEBSITE_THW_VOL_FILES}:/static
+    environment:
+      VIRTUAL_HOST: ${WEBSITE_THW_HOST}
+      LETSENCRYPT_HOST: ${WEBSITE_THW_HOST}
+      LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
+      
+  image-proxy:
+    image: darthsim/imgproxy
+    container_name: image-proxy
+    restart: unless-stopped
+    networks:
+      - web-server
+    environment:
+      # Hosting
+      VIRTUAL_HOST: ${IMGPROXY_HOST}
+      LETSENCRYPT_HOST: ${IMGPROXY_HOST}
+      LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
+      # img-proxy
+      IMGPROXY_KEY: ${IMGPROXY_KEY}
+      IMGPROXY_SALT: ${IMGPROXY_SALT}
+
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: docker-socket-proxy
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:2375:2375"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - CONTAINERS=1
+
+  netdata:
+    image: netdata/netdata:stable
+    container_name: netdata
+    restart: unless-stopped
+    hostname: ${NETDATA_HOST}
+    ports:
+      - 19999:19999
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - apparmor=unconfined
+    depends_on:
+      - web-server
+      - docker-socket-proxy
+    networks:
+      - web-server
+      - mysql-database
+    volumes:
+      - netdata_lib:/var/lib/netdata:rw
+      - netdata_conf:/etc/netdata:rw
+      - netdata_cache:/var/cache/netdata:rw
+      - /sys:/host/sys:ro
+      - /proc:/host/proc:ro
+      - /etc/group:/host/etc/group:ro
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/os-release:/host/etc/os-release:ro
+    environment:
+      # Hosting
+      VIRTUAL_HOST: ${NETDATA_HOST}
+      VIRTUAL_PORT: 19999
+      LETSENCRYPT_HOST: ${NETDATA_HOST}
+      LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
+      # Netdata
+      DOCKER_HOST: tcp://localhost:2375
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    restart: unless-stopped
+    command: server disk1
+    networks:
+      - web-server
+    volumes:
+      - ${MINIO_VOL_DATA}:/disk1
+    environment:
+      # Hosting
+      VIRTUAL_HOST: ${MINIO_HOST}
+      VIRTUAL_PORT: 9000
+      LETSENCRYPT_HOST: ${MINIO_HOST}
+      LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
+      # Minio
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_KMS_SECRET_KEY: ${MINIO_ENCRYPTION_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  nextcloud:
+    image: nextcloud
+    container_name: nextcloud
+    restart: unless-stopped
+    depends_on:
+      - mysql-database
+    networks:
+      - web-server
+      - mysql-database
+    volumes:
+      - ${NEXTCLOUD_VOL_DATA}:/var/www/html
+    environment:
+      VIRTUAL_HOST: ${NEXTCLOUD_HOST}
+      LETSENCRYPT_HOST: ${NEXTCLOUD_HOST}
+      LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
+
+  minecraft:
+    image: itzg/minecraft-server:java16
+    container_name: minecraft
+    restart: unless-stopped
+    networks:
+      - web-server
+    ports:
+      # Minecraft
+      - 25565:25565
+      # Dynmap
+      - 8123:8123
+    volumes:
+      - ./minecraft:/data
+    environment:
+      VIRTUAL_HOST: ${MINECRAFT_DYNMAP_HOST}
+      VIRTUAL_PORT: 8123
+      LETSENCRYPT_HOST: ${MINECRAFT_DYNMAP_HOST}
+      LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
+      # Image Settings
+      EULA: "true"
+      TYPE: "PAPER"
+      # Java
+      MEMORY: "3G"
+      # Server Properties
+      OVERRIDE_SERVER_PROPERTIES: "true"
+      OPS: ${MINECRAFT_PROP_OPS}
+      MOTD: ${MINECRAFT_PROP_MOTD}
+      ICON: ${MINECRAFT_PROP_ICON}
+      SEED: ${MINECRAFT_PROP_SEED}
+      ONLINE_MODE: ${MINECRAFT_PROP_ONLINE_MODE}
+      VIEW_DISTANCE: ${MINECRAFT_PROP_VIEW_DISTANCE}
+      MAX_BUILD_HEIGHT: ${MINECRAFT_PROP_BUILD_HEIGHT}
+      ENABLE_AUTOPAUSE: ${MINECRAFT_PROP_AUTOPAUSE}
