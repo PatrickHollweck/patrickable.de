@@ -84,6 +84,29 @@ services:
       UPLOAD_LIMIT: 4G
       MAX_EXECUTION_TIME: 5000
 
+  website-blog:
+    image: ghost:4-alpine
+    container_name: website-blog
+    restart: unless-stopped
+    networks:
+      - web-server
+      - mysql-database
+    volumes:
+      - ${WEBSITE_BLOG_VOL_FILES}:/var/lib/ghost/content
+    environment:
+      # Hosting
+      VIRTUAL_HOST: ${WEBSITE_BLOG_HOST}
+      VIRTUAL_PORT: 2368
+      LETSENCRYPT_HOST: ${WEBSITE_BLOG_HOST}
+      LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
+      # Ghost
+      url: https://blog.patrickhollweck.de
+      database__client: mysql
+      database__connection__host: mysql-database
+      database__connection__database: ghost_blog
+      database__connection__user: ${WEBSITE_BLOG_MYSQL_USER}
+      database__connection__password: ${WEBSITE_BLOG_MYSQL_PASSWORD}
+
   website-root:
     image: flashspys/nginx-static
     container_name: website-root
@@ -109,7 +132,7 @@ services:
       VIRTUAL_HOST: ${WEBSITE_THW_HOST}
       LETSENCRYPT_HOST: ${WEBSITE_THW_HOST}
       LETSENCRYPT_EMAIL: ${ADMIN_EMAIL}
-      
+
   image-proxy:
     image: darthsim/imgproxy
     container_name: image-proxy

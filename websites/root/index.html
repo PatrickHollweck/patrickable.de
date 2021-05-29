@@ -1,173 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" />
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous" />
-		
-		<style>
-			html {
-			    height: 100vh;
-			    overflow: hidden;
-			}
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+    />
 
-			body {
-				height: 100%;
-				overflow: auto;
-                background-size: cover;
-                background-position: center;
-				background-repeat: no-repeat;
-                background-attachment: fixed;
-            }
-			
-			body:before {
-			    height: 100vh;
-			    content: "";
-				position: absolute;
-				left: 0;
-				right: 0;
-				top: 0;
-				bottom: 0;
-				background: radial-gradient(#00000014, #0000007c);
-			}
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x"
+      crossorigin="anonymous"
+    />
 
-			#services-container {
-			    height: 100%;
-			    overflow: auto;
-			    display: table-cell;
-				vertical-align: middle;
-			}
+    <style>
+      html {
+        height: 100vh;
+        overflow: hidden;
+      }
 
-			.app {
-			    display: table;
-			    height: 100%;
-				align-self: center;
-			}
+      body {
+        height: 100%;
+        overflow: auto;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+      }
 
-            .spacer {
-			    height: 7px;
-			}
-			
-			.text-muted {
-			    color: #979797!important;
-			}
+      body:before {
+        height: 100vh;
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background: radial-gradient(#00000014, #0000007c);
+      }
 
-			.service {
-			    background: black;
-				border-width: 3px;
-                color: white;
-				transition: all 250ms ease-in-out;
-				border-radius: 2rem!important;
-			}
-			
-			a:focus {
-			    border-color: darkblue;
-				color: white !important;
-			    background: black !important;
-			}
-			
-			a:hover {
-			    border-color: white;
-			    color: white !important;
-			    background: black !important;
-			}
+      .content-container {
+        height: 100%;
+        overflow: auto;
+        display: table-cell;
+        vertical-align: middle;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
 
-			.service:first-of-type {
-				margin-top: 10px;
-			}
+      #socials-container {
+        display: flex;
+        justify-content: center;
+        flex-direction: row;
+      }
 
-			.service:last-of-type {
-				margin-bottom: 10px;
-			}
+      .app {
+        display: table;
+        height: 100%;
+        align-self: center;
+      }
 
-            .responsive-width {
-				width: 100%;
-			}
+      .spacer-vertical {
+        height: 7px;
+      }
 
-			@media only screen and (min-width: 800px, max-width: 1000px) {
-				.responsive-width {
-					width: 70%;
-				}
-			}
-			
-			@media only screen and (min-width: 1000px) {
-				.responsive-width {
-					width: 40%;
-				}
-			}
-		</style>
+      .spacer-horizontal {
+        width: 7px;
+      }
 
-        <title>PatrickHollweck</title>
-    </head>
-    <body>
-        <div class="container responsive-width app">
-            <div id="services-container" class="list-group"></div>
-        </div>
-		
-		<script>
-		    const BACKGROUND_PORTRAIT_COUNT = 16;
-			const BACKGROUND_LANDSCAPE_COUNT = 2;
-		
-			const services = [
-				{
-					"name": "NextCloud",
-					"description": "File storage hub",
-					"url": "https://cloud.patrickhollweck.de",
-					"favicon": "https://cloud.patrickhollweck.de/core/img/favicon.ico",
-				},
-				{
-					"name": "Netdata",
-					"description": "System monitoring service",
-					"url": "https://monitor.patrickhollweck.de",
-					"favicon": "https://patrickhollweck.de/logos/netdata.png",
-				},
-				{
-					"name": "Minecraft DynMap",
-					"description": "Minecraft Server Address: <code>minecraft.patrickhollweck.de</code>",
-					"url": "https://minemap.patrickhollweck.de",
-					"favicon": "https://patrickhollweck.de/logos/minecraft.png",
-				},
-				{
-					"name": "THW Quiz",
-					"description": "Theorie Fragen für die THW Grundausbildungsprüfung",
-					"url": "https://thw.patrickhollweck.de",
-					"favicon": "https://patrickhollweck.de/logos/thw.png",
-				},
-			];
+      .text-muted {
+        color: #979797 !important;
+      }
 
-			services.forEach(async (service) => {
-				const html = `
-                    <a href="${service.url}" target="_blank" class="service rounded-3 list-group-item list-group-item-action d-flex align-items-center">
-                        <img class="me-3" height="32" width="32" src="${service.favicon}" />
-                         <div class="d-flex flex-column flex-fill">
-							${service.name}
-							<small class="text-muted">${service.description}</small>
-						</div>
-						<i class=" bi bi-caret-right"></i>
-					</a>
-					<div class="spacer"></div>
-				`;
-	
-				document.querySelector("#services-container").insertAdjacentHTML('beforeEnd', html);
-			});
-			
-            function random(min, max) { // min and max included 
-                return Math.floor(Math.random() * (max - min + 1) + min)
-            }
+      .social {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: black;
+        border-radius: 1rem;
+        border-width: 3px;
+        padding: 10px;
+        height: 50px;
+        width: 50px;
+      }
 
-     		const platform = window.innerWidth >= window.innerHeight
-			    ? "portrait"
-				: "landscape";
+      .socials-icon {
+        width: 100%;
+        height: 100%;
+      }
 
-			const plaformBackgroundCount = platform === "portrait"
-                ? BACKGROUND_PORTRAIT_COUNT
-				: BACKGROUND_LANDSCAPE_COUNT;
+      .service {
+        background: black;
+        border-width: 3px;
+        color: white;
+        transition: all 250ms ease-in-out;
+        border-radius: 2rem !important;
+      }
 
-			const backgroundId = random(0, plaformBackgroundCount);
+      a:focus {
+        border-color: darkblue;
+        color: white !important;
+        background: black !important;
+      }
 
-			document.body.style.backgroundImage = `url("/backgrounds/${platform}/${backgroundId}.png")`
-		</script>
-    </body>
+      a:hover {
+        border-color: white;
+        color: white !important;
+        background: black !important;
+      }
+
+      .responsive-width {
+        width: 100%;
+      }
+
+      @media only screen and (min-width: 800px, max-width: 1000px) {
+        .responsive-width {
+          width: 70%;
+        }
+      }
+
+      @media only screen and (min-width: 1000px) {
+        .responsive-width {
+          width: 40%;
+        }
+      }
+
+      #socials-container > .list-group-item:first-child {
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+      }
+
+      #socials-container > .list-group-item:last-child {
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+      }
+    </style>
+
+    <title>PatrickHollweck</title>
+  </head>
+  <body>
+    <div class="container responsive-width app">
+      <div class="content-container">
+        <div id="services-container" class="list-group"></div>
+        <div id="socials-container"></div>
+      </div>
+    </div>
+
+    <script>
+      /**
+       * Service HTML generation
+       */
+
+      const services = [
+        {
+          name: "Blog",
+          description: "Personal blog",
+          url: "https://blog.patrickhollweck.de",
+          favicon: "https://blog.patrickhollweck.de/favicon.ico",
+        },
+        {
+          name: "NextCloud",
+          description: "File storage hub",
+          url: "https://cloud.patrickhollweck.de",
+          favicon: "https://cloud.patrickhollweck.de/core/img/favicon.ico",
+        },
+        {
+          name: "Netdata",
+          description: "System monitoring service",
+          url: "https://monitor.patrickhollweck.de",
+          favicon: "https://patrickhollweck.de/logos/netdata.png",
+        },
+        {
+          name: "Minecraft DynMap",
+          description:
+            "Minecraft Server Address: <code>minecraft.patrickhollweck.de</code>",
+          url: "https://minemap.patrickhollweck.de",
+          favicon: "https://patrickhollweck.de/logos/minecraft.png",
+        },
+        {
+          name: "THW Quiz",
+          description: "Theorie Fragen für die THW Grundausbildungsprüfung",
+          url: "https://thw.patrickhollweck.de",
+          favicon: "https://patrickhollweck.de/logos/thw.png",
+        },
+      ];
+
+      services.forEach((service) => {
+        const html = `
+			<a href="${service.url}" target="_blank" class="service list-group-item list-group-item-action d-flex align-items-center">
+				<img class="me-3" height="32" width="32" src="${service.favicon}" />
+				<div class="d-flex flex-column flex-fill">
+					${service.name}
+      				<small class="text-muted">${service.description}</small>
+      			</div>
+      			<i class=" bi bi-caret-right"></i>
+      		</a>
+      		<div class="spacer-vertical"></div>
+		`;
+
+        document
+          .querySelector("#services-container")
+          .insertAdjacentHTML("beforeEnd", html);
+      });
+
+      /**
+       * Socials
+       */
+
+      const socials = [
+        {
+          icon: "https://patrickhollweck.de/logos/twitter.png",
+          url: "https://twitter.com/HollweckPatrick",
+        },
+        {
+          icon: "https://patrickhollweck.de/logos/github.png",
+          url: "https://github.com/PatrickHollweck",
+        },
+        {
+          icon: "https://patrickhollweck.de/logos/stackoverflow.png",
+          url: "https://stackoverflow.com/users/6754222/patrick-hollweck?tab=profile",
+        },
+      ];
+
+      socials.forEach((social) => {
+        const html = `
+			<a href="${social.url}" target="_blank" class="social list-group-item list-group-item-action">
+				<img class="socials-icon" src="${social.icon}" />
+			</a>
+			<div class="spacer-horizontal"></div>
+		`;
+
+        document
+          .querySelector("#socials-container")
+          .insertAdjacentHTML("beforeEnd", html);
+      });
+
+      /**
+       * Randomized background
+       */
+
+      const BACKGROUND_PORTRAIT_COUNT = 16;
+      const BACKGROUND_LANDSCAPE_COUNT = 2;
+
+      function random(min, max) {
+        // min and max included
+        return Math.floor(Math.random() * (max - min + 1) + min);
+      }
+
+      const platform =
+        window.innerWidth >= window.innerHeight ? "portrait" : "landscape";
+
+      const plaformBackgroundCount =
+        platform === "portrait"
+          ? BACKGROUND_PORTRAIT_COUNT
+          : BACKGROUND_LANDSCAPE_COUNT;
+
+      const backgroundId = random(0, plaformBackgroundCount);
+
+      document.body.style.backgroundImage = `url("/backgrounds/${platform}/${backgroundId}.png")`;
+    </script>
+  </body>
 </html>
